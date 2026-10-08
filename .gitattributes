@@ -1,0 +1,8 @@
+# 统一行尾（跨平台贡献时避免满屏 CRLF diff）
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.zip binary
