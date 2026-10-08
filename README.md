@@ -20,7 +20,7 @@
 | 方式 | 做法 |
 |---|---|
 | 本地直开（推荐） | clone 后**双击** `outputs/gnss-swarm-lab.html` |
-| 在线试用 | 若仓库开启了 GitHub Pages：`https://jx407.github.io/gnss-swarm-lab/` |
+| 在线试用 | <https://jx407.github.io/gnss-swarm-lab/>（GitHub Pages，已启用） |
 | 内联进宿主页 | 用 `outputs/gnss-swarm-lab.inline.html`（片段，不是完整 HTML） |
 
 ## 10 个标签页能看什么
