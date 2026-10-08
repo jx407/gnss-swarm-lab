@@ -1,0 +1,48 @@
+# ---- 本项目仓库**只收源码 / 判据 / 文档 / 构建产物**，不收截图与中间产物 ----
+# 中间产物与本地缓存
+work/gnss-swarm/build/
+work/gnss-swarm/candidates/
+work/gnss-swarm/lib/node_modules/
+.pw-browsers/
+node_modules/
+
+# 探针产生的截图 / 日志 / 一次性脚本
+work/gnss-swarm/qa/*.png
+work/gnss-swarm/qa/*.jpg
+work/gnss-swarm/qa/layout/
+work/gnss-swarm/qa/before-kimi/
+work/gnss-swarm/qa/after-kimi/
+work/gnss-swarm/qa/backup-*/
+work/gnss-swarm/qa/tmp-*.html
+work/gnss-swarm/qa/sweep*.txt
+work/gnss-swarm/qa/*.out.txt
+work/gnss-swarm/qa/apply-*.js
+
+# 审计证据：保留报告（*.md/*.js），排除大体积截图与抓取页
+review/**/*.png
+review/**/*.jpg
+review/**/*.jpeg
+review/**/*.html
+review/**/*.pdf
+review/**/*.txt
+review/**/*.json
+work/gnss-swarm/review/**/*.png
+work/gnss-swarm/review/**/*.html
+work/gnss-swarm/review/**/*.out.txt
+work/gnss-swarm/review/**/*.stdout.txt
+
+# 杂项
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# ---- 收紧：审计中间产物只留"报告 + 顶层探头"，不留各代理的目录 ----
+review/ds41/*/
+review/kimi-A/
+review/kimi-B/
+review/kimi-C/
+review/ds41/*.json
+review/ds41/*.txt
+work/gnss-swarm/review/
+work/gnss-swarm/*.bak

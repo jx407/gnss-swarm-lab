@@ -1,0 +1,778 @@
+<div id="gnss-lab">
+  <h1 class="gl-h1">GNSS 蜂群工作台</h1>
+  <p class="text-small text-muted gl-intro">这是一套可动手比较的 GNSS 实验，覆盖星座、捕获到跟踪的完整链路。<br>每页开头有一句话读法，先看那句再看图；需要推导与实测数字时，再展开页尾的「详细说明」。<br>比较结果时只动一个参数，避免把不同条件混在一起。</p>
+  <details class="gl-glossary">
+    <summary>术语速查（PDOP / RAIM / HPL / C/N0 / NEES / chip / spc …，点开）</summary>
+    <ul class="text-small text-muted">
+      <li><strong>PDOP / GDOP / HDOP / VDOP</strong>：几何精度因子——卫星在天上分布越开越小；PDOP &lt; 2 算好几何，&gt; 6 表示卫星挤在一起。</li>
+      <li><strong>RAIM</strong>：接收机自主完好性监测——用多余观测互相校验，找出坏星。</li>
+      <li><strong>HPL / VPL</strong>：水平 / 垂向保护限——由几何与噪声推出来的误差置信上界（本页对照 40 m 水平告警限）。</li>
+      <li><strong>nmr</strong>：归一化残差（残差 ÷ 它的标准差）——RAIM 用它挑最可疑的那颗星。</li>
+      <li><strong>杠杆</strong>：帽子矩阵对角元；越接近 1，这颗星出错越容易被解自己吸收、越难检出。</li>
+      <li><strong>chip</strong>：C/A 码的一个码片；1 chip = 1/1.023 MHz ≈ 0.978 μs ≈ <span class="tabular-nums">293 m</span>。</li>
+      <li><strong>spc</strong>：samples per chip，每个码片采几个点；采样率高，码相位才分得细。</li>
+      <li><strong>C/N0</strong>：载噪比，衡量信号强弱；越高表示噪声越小。</li>
+      <li><strong>σ</strong>：噪声标准差。图上写「峰 10.7σ」＝峰高是噪声的 10.7 倍；定位页的 σ 是伪距噪声（米）。</li>
+      <li><strong>RMS</strong>：均方根误差——本页所有「误差 … m」都是 RMS。</li>
+      <li><strong>DRMS</strong>：二维径向 1σ 圆半径，散点图里的虚线圈就是它。</li>
+      <li><strong>TTFF</strong>：Time To First Fix，首次定位用时。</li>
+      <li><strong>NEES</strong>：归一化估计误差平方，检查滤波器有没有「过度自信」（理论值 3）。</li>
+      <li><strong>Costas</strong>：对载波 180° 相位翻转不敏感的鉴相器；<strong>DLL / PLL</strong>：延迟锁定环 / 相位锁定环。</li>
+      <li><strong>lag</strong>：相关函数的时延自变量（单位 chip）；<strong>历元</strong>：一个采样时刻（本页多为 1 ms 或 1 s）。</li>
+      <li><strong>伪距</strong>：由传播时间算出的"距离"测量，含接收机钟差与大气延迟。</li>
+      <li><strong>PRN</strong>：卫星编号（也指它的 C/A 码）；G12 ＝ GPS 第 12 号。</li>
+      <li><strong>多普勒</strong>：相对运动引起的频率偏移；捕获时按多普勒格搜索。</li>
+      <li><strong>电离层</strong>：高空自由电子造成的信号延迟；单频用模型只能改掉 50–70%。</li>
+      <li><strong>最小二乘</strong>：让"观测 − 模型"残差平方和最小的解算方法。</li>
+      <li><strong>相干积分</strong>：把 1 ms 的相关值同相累加（本页 4 ms），越长噪声抑制越好。</li>
+      <li><strong>周跳</strong>：载波相位计数的跳变（整周跳变/失锁），Hatch 平滑必须检测它。</li>
+      <li><strong>相关器</strong>：把接收信号与本地复制码做相关的部件；早/迟门用于 DLL 测距。</li>
+      <li><strong>Walker 星座</strong>：均匀铺开的星座构型；本页 24/6/2 ＝ 24 颗、6 个轨道面、每面 2 个相位。</li>
+      <li><strong>MEO</strong>：中圆地球轨道（BeiDou-3 MEO 半长轴约 27906 km）。</li>
+      <li><strong>掩膜</strong>：仰角门限；低于它的卫星不参与解算。</li>
+      <li><strong>自相关 / 互相关</strong>：同一颗星自己码对齐得有多尖 / 两颗不同 PRN 长得有多像。</li>
+      <li><strong>旁瓣</strong>：相关峰两侧的次要峰；越小越不容易误判。</li>
+      <li><strong>信噪比</strong>：信号与噪声的功率比（dB）；数值越低信号越弱——捕获页拖到 −30 dB 以下能看到相关峰被噪声淹没。</li>
+      <li><strong>双频消电离层</strong>：用 L1/L2 组合消掉电离层，代价是噪声放大 2.978 倍。</li>
+      <li><strong>数据位翻转 / IQ</strong>：导航电文的 ±1 会让相位跳 π；Costas 环对它免疫，IQ 星座图看收敛。</li>
+      <li><strong>窄相关 / 早迟门</strong>：只用峰附近很窄的早、迟相关点做判别，抗多径。</li>
+      <li><strong>卡尔曼滤波</strong>：用"预测 + 观测更新"递推估计位置/速度，把逐历元的抖动压平。</li>
+      <li><strong>蒙特卡洛 / 分位数</strong>：用大量随机重复实验统计结果 / 排序后取分位（中位数＝50% 分位）。</li>
+      <li><strong>采样格点</strong>：DOP 曲线每隔 15 min 取一个时刻；格子越密，中位数越稳。</li>
+      <li><strong>抖动</strong>：同一量在不同历元之间的波动幅度（本页用 RMS 或标准差表示）。</li>
+      <li><strong>Klobuchar / α 系数</strong>：广播电离层模型的 8 个参数；本页只用 α（振幅项）。</li>
+      <li><strong>CelesTrak</strong>：公开的卫星根数（轨道参数）来源；页面用其 2026-10-05 快照。</li>
+      <li><strong>环路阶数</strong>：PLL/DLL 的积分器阶数；阶数越高越能跟匀速漂移，但更容易失稳。</li>
+      <li><strong>max|d|</strong>：鉴相器输出的最大绝对相位误差（弧度），越小说明锁得越稳。</li>
+      <li><strong>双峰</strong>：DOP 在一天里出现两个低谷（卫星构型周期性变化所致）。</li>
+      <li><strong>ISB</strong>：系统间偏差（inter-system bias）——不同星座之间的钟差偏差。</li>
+      <li><strong>ACQ</strong>：捕获（acquisition），即"在二维面上找相关峰"这一步。</li>
+      <li><strong>LS</strong>：最小二乘（least squares）的缩写，见上面「最小二乘」。</li>
+    </ul>
+  </details>
+  <nav aria-label="工作台标签页">
+  <div class="nav nav-pills" role="tablist" aria-label="GNSS 工作台">
+    <button class="nav-link active" id="gl-tab-sky" role="tab" tabindex="0" aria-controls="gl-panel-sky" aria-selected="true" type="button">星座几何</button>
+    <button class="nav-link" id="gl-tab-ca" role="tab" tabindex="-1" aria-controls="gl-panel-ca" aria-selected="false" type="button">C/A 码</button>
+    <button class="nav-link" id="gl-tab-acq" role="tab" tabindex="-1" aria-controls="gl-panel-acq" aria-selected="false" type="button">捕获搜索</button>
+    <button class="nav-link" id="gl-tab-pos" role="tab" tabindex="-1" aria-controls="gl-panel-pos" aria-selected="false" type="button">定位解算</button>
+    <button class="nav-link" id="gl-tab-mp" role="tab" tabindex="-1" aria-controls="gl-panel-mp" aria-selected="false" type="button">多径与遮挡</button>
+    <button class="nav-link" id="gl-tab-raim" role="tab" tabindex="-1" aria-controls="gl-panel-raim" aria-selected="false" type="button">RAIM 检核</button>
+    <button class="nav-link" id="gl-tab-geo" role="tab" tabindex="-1" aria-controls="gl-panel-geo" aria-selected="false" type="button">全球几何</button>
+    <button class="nav-link" id="gl-tab-atm" role="tab" tabindex="-1" aria-controls="gl-panel-atm" aria-selected="false" type="button">误差预算</button>
+    <button class="nav-link" id="gl-tab-cold" role="tab" tabindex="-1" aria-controls="gl-panel-cold" aria-selected="false" type="button">冷启动</button>
+    <button class="nav-link" id="gl-tab-pll" role="tab" tabindex="-1" aria-controls="gl-panel-pll" aria-selected="false" type="button">载波跟踪</button>
+  </div>
+  </nav>
+
+  <div id="gl-panels" role="region" aria-label="实验面板（10 个标签页）">
+  <div id="gl-panel-sky" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-sky">
+    <h2 class="gl-h2">星座几何</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-const-src">星座来源</label>
+        <select class="form-select" id="gl-const-src">
+          <option value="syn">合成 Walker（解析 · 可叠加三系统）</option>
+          <option value="real">真实 GPS（CelesTrak 2026-10-05 根数）</option>
+        </select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-sys">卫星系统</label>
+        <select class="form-select" id="gl-sys">
+          <option value="G">仅 GPS（24 颗）</option>
+          <option value="GE">GPS + Galileo（48 颗）</option>
+          <option value="GEC">GPS + Galileo + BeiDou（72 颗）</option>
+        </select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-lat">纬度 <span class="tabular-nums" id="gl-lat-val">31.2°N</span></label>
+        <input class="form-range" type="range" id="gl-lat" min="-80" max="80" step="0.5" value="31.2">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-lon">经度 <span class="tabular-nums" id="gl-lon-val">121.5°E</span></label>
+        <input class="form-range" type="range" id="gl-lon" min="-179" max="179" step="0.5" value="121.5">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-mask">仰角掩膜 <span class="tabular-nums" id="gl-mask-val">10°</span></label>
+        <input class="form-range" type="range" id="gl-mask" min="0" max="40" step="1" value="10">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-hours">历元 t0+ <span class="tabular-nums" id="gl-hours-val">0.0 h</span></label>
+        <input class="form-range" type="range" id="gl-hours" min="0" max="24" step="0.25" value="0">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-sky-prn">选中卫星（键盘可选，等价于点星图）</label>
+        <select class="form-select" id="gl-sky-prn"></select>
+      </div>
+    </div>
+    <p class="text-small text-muted" id="gl-const-note"></p>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">可见卫星</div>
+        <div class="viz-stat-value tabular-nums" id="gl-sky-n">—</div>
+        <div class="text-small text-muted" id="gl-sky-n-ctx">掩膜 10°</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">PDOP</div>
+        <div class="viz-stat-value tabular-nums" id="gl-sky-pdop">—</div>
+        <div class="text-small text-muted">位置几何 · 越小越好（&lt;2 好）</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">GDOP</div>
+        <div class="viz-stat-value tabular-nums" id="gl-sky-gdop">—</div>
+        <div class="text-small text-muted">含接收机钟差</div>
+      </div>
+    </div>
+    <div class="gl-two">
+      <canvas id="gl-sky-canvas" role="img" aria-label="极坐标星空图：圆周方向为方位角，半径方向为仰角，实心圆点高于掩膜，空心为被掩膜剔除"></canvas>
+      <canvas id="gl-dop-canvas" role="img" aria-label="24 小时 PDOP、HDOP、VDOP 曲线，纵轴为精度因子，横轴为小时"></canvas>
+    </div>
+    <p class="text-small text-muted gl-note" id="gl-sky-detail">点卫星看视线角，点曲线改历元。</p>
+
+    <canvas id="gl-doppler-canvas" role="img" aria-label="所选卫星 24 小时内相对接收机的多普勒频移曲线，横轴为小时，纵轴为赫兹"></canvas>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-dop-to-acq">把选中卫星此刻的多普勒送进捕获面板</label>
+        <button class="btn" id="gl-dop-to-acq" type="button">填入真实多普勒</button>
+      </div>
+    </div>    <p class="text-small text-muted gl-lead">这一页看卫星分布如何决定几何好坏；先看可见星数与 PDOP——星越多、分布越开，PDOP 越小。所以切换「卫星系统」或「星座来源」，看这两个数怎么跟着变。</p>
+    <details class="gl-about"><summary>完整读法（268 字，点开）</summary>
+      <p class="text-small text-muted gl-read">读法：实心点高于掩膜、参与解算，空心点被掩膜剔除；PDOP &lt; 2 是好几何，&gt; 6 表示卫星挤在同一片天空。把「卫星系统」从仅 GPS 切到三系统，可见星立刻从 7–9 颗变成 20+，PDOP 与定位误差同步下降——这正是真实接收机同时收 GPS/Galileo/BeiDou 的原因。再把「星座来源」切到真实 GPS：换成 2026-10-05 抓取的 32 颗在轨卫星平均根数（上海上空 9 颗可见、PDOP 1.65、最高仰角 85°），这一档是「真实几何 + 公里级误差」，不是精密星历（下方说明给出实测误差）。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-ca" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-ca" hidden>
+    <h2 class="gl-h2">C/A 码</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-prn">PRN</label>
+        <select class="form-select" id="gl-prn"></select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-prn2">对比 PRN</label>
+        <select class="form-select" id="gl-prn2"></select>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">非峰值自相关 max |R|</div>
+        <div class="viz-stat-value tabular-nums" id="gl-ca-auto">—</div>
+        <div class="text-small text-muted">1022 个 lag 全扫</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">互相关 max |R|</div>
+        <div class="viz-stat-value tabular-nums" id="gl-ca-cross">—</div>
+        <div class="text-small text-muted">与对比 PRN</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">周期 / 平衡</div>
+        <div class="viz-stat-value tabular-nums" id="gl-ca-bal">—</div>
+        <div class="text-small text-muted">chips / ±1 计数</div>
+      </div>
+    </div>
+    <canvas id="gl-chip-canvas" role="img" aria-label="C/A 码前 64 个码片条带，实心表示 +1，空心表示 -1"></canvas>
+    <div class="gl-two">
+      <canvas id="gl-auto-canvas" role="img" aria-label="自相关函数：lag -64 到 64，中心尖峰 1023，旁瓣只有 63、-1、-65"></canvas>
+      <canvas id="gl-cross-canvas" role="img" aria-label="与对比 PRN 的互相关函数：lag -64 到 64，幅度不超过 65"></canvas>
+    </div>
+    <p class="text-small text-muted gl-note" id="gl-ca-detail">前 10 chip：—</p>
+    <p class="text-small text-muted gl-lead">这一页看 C/A 码的自相关尖峰与互相关底噪；先看中心尖峰有多高——峰远高于旁瓣，各星才容易区分。所以换「对比 PRN」，看互相关峰有多低。</p>
+    <details class="gl-about"><summary>完整读法（116 字，点开）</summary>
+      <p class="text-small text-muted gl-read">读法：R(lag) 是未归一化的相关和。C/A 码在 lag=0 有 1023 的唯一尖峰，其它 lag 只允许出现 63 / −1 / −65；任意两个不同 PRN 的互相关不超过 65 —— 这就是所有卫星能共用同一频点的原因。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-acq" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-acq" hidden>
+    <h2 class="gl-h2">捕获搜索</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-acq-prn">信号 PRN</label>
+        <select class="form-select" id="gl-acq-prn"></select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-acq-phase">真实码相位 <span class="tabular-nums" id="gl-acq-phase-val">312.5 chip</span></label>
+        <input class="form-range" type="range" id="gl-acq-phase" min="0" max="1022.75" step="0.25" value="312.5">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-acq-dop">真实多普勒 <span class="tabular-nums" id="gl-acq-dop-val">+2300 Hz</span></label>
+        <input class="form-range" type="range" id="gl-acq-dop" min="-5000" max="5000" step="50" value="2300">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-acq-snr">信噪比 <span class="tabular-nums" id="gl-acq-snr-val">-20 dB</span></label>
+        <input class="form-range" type="range" id="gl-acq-snr" min="-35" max="-12" step="1" value="-20">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-acq-run">4 ms 相干积分 · 41 个多普勒格</label>
+        <button class="btn btn-primary" id="gl-acq-run" type="button">开始捕获</button>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">检测码相位</div>
+        <div class="viz-stat-value tabular-nums" id="gl-acq-p">—</div>
+        <div class="text-small text-muted" id="gl-acq-p-ctx">真实值 —</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">检测多普勒</div>
+        <div class="viz-stat-value tabular-nums" id="gl-acq-f">—</div>
+        <div class="text-small text-muted" id="gl-acq-f-ctx">真实值 —</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">相关峰 / 检测对比度</div>
+        <div class="viz-stat-value tabular-nums" id="gl-acq-ratio">—</div>
+        <div class="text-small text-muted" id="gl-acq-time">耗时 — ms</div>
+      </div>
+    </div>
+    <canvas id="gl-acq-canvas" role="img" aria-label="二维捕获搜索面：横轴码相位 0 到 1023 chip，纵轴多普勒 -5000 到 5000 Hz，亮斑即相关峰"></canvas>
+    <canvas id="gl-acq-profile" role="img" aria-label="峰值多普勒行上的相关幅度剖面，横轴码相位"></canvas>
+    <div class="progress gl-progress" role="progressbar" aria-label="搜索面绘制进度" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="gl-acq-prog-wrap">
+      <div class="progress-bar" id="gl-acq-prog" style="width:0%"></div>
+    </div>
+    <p class="text-small text-muted gl-note" id="gl-acq-detail">调好参数后点「开始捕获」。</p>
+    <p class="text-small text-muted gl-lead">这一页在码相位 × 多普勒的二维面上找相关峰；先看亮点——峰越高、背景越平，检测越可信。所以把「信噪比」一路往下拖，看亮点会不会沉进噪声。</p>
+    <details class="gl-about"><summary>完整读法（107 字，点开）</summary>
+      <p class="text-small text-muted gl-read">读法：横轴是一个 1 ms 码周期内的码相位，纵轴是多普勒，亮点就是相关峰。峰高必须明显超过「折叠后 ≈4.2 万个等效噪声格（原始搜索面 4092×41）里噪声最大值 ≈ 4.6σ」才算可信检测；信噪比往下拖到 −30 dB 以下，能亲眼看到峰被噪声淹没。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-pos" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-pos" hidden>
+    <h2 class="gl-h2">定位解算</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-pos-sigma">伪距噪声 σ <span class="tabular-nums" id="gl-pos-sigma-val">5.0 m</span></label>
+        <input class="form-range" type="range" id="gl-pos-sigma" min="0" max="15" step="0.5" value="5">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pos-n">参与解算卫星 <span class="tabular-nums" id="gl-pos-n-val">8</span></label>
+        <input class="form-range" type="range" id="gl-pos-n" min="4" max="24" step="1" value="8">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pos-isb">多系统时估计系统间钟差（ISB）</label>
+        <label class="form-check"><input class="form-check-input" type="checkbox" id="gl-pos-isb" checked><span class="form-check-label">每系统一个钟差未知量</span></label>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pos-iono-act">电离层活跃度（三情景同批噪声对照）</label>
+        <select class="form-select" id="gl-pos-iono-act">
+          <option value="1">×1 平静（模型改正占优）</option>
+          <option value="5">×5 中等</option>
+          <option value="20">×20 强扰动（双频可能反超）</option>
+        </select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pos-run">接收机与星座几何面板同源</label>
+        <button class="btn btn-primary" id="gl-pos-run" type="button">运行 50 次解算</button>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">水平 RMS（等权）</div>
+        <div class="viz-stat-value tabular-nums" id="gl-pos-hrms">—</div>
+        <div class="text-small text-muted" id="gl-pos-3rms">含高程分量 —</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">水平 RMS（高程加权）</div>
+        <div class="viz-stat-value tabular-nums" id="gl-pos-hrms-w">—</div>
+        <div class="text-small text-muted" id="gl-pos-hrms-w-ctx">低仰角卫星自动降权</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">PDOP 等权 → 加权</div>
+        <div class="viz-stat-value tabular-nums" id="gl-pos-gdop">—</div>
+        <div class="text-small text-muted" id="gl-pos-gdop-ctx">几何构型</div>
+      </div>
+    </div>
+    <div class="gl-two">
+      <canvas id="gl-pos-scatter" role="img" aria-label="东-北平面误差散点图：原点为真实位置，圆点是最小二乘解，虚线圈是 1σ 与 2σ 样本圈"></canvas>
+      <canvas id="gl-pos-resid" role="img" aria-label="最近一次解算的伪距残差柱状图"></canvas>
+    </div>
+    <canvas id="gl-pos-iono-canvas" role="img" aria-label="电离层三情景（不改正 / 模型改正 / 双频消电离层）的水平定位 RMS 对比"></canvas>
+    <p class="text-small text-muted gl-note" id="gl-pos-detail">选好噪声后点「运行 50 次解算」。</p>
+    <p class="text-small text-muted gl-lead">这一页用多颗星联立解位置；先看散点误差圈，再比「等权」与「高程加权」两张卡——同一批噪声下，加权那张通常更稳。所以拖「伪距噪声 σ」或改「卫星数」，看两张卡怎么跟着变。</p>
+    <details class="gl-about"><summary>继续读：推导 · 实测数字 · 已知边界（点开）</summary>
+      <p class="text-small text-muted gl-read">（切到三系统后还可以把「参与解算卫星」拉到 20 以上，几何还会更稳。）伪距噪声按仰角放大（低仰角卫星的信噪比、大气残差、多径都更差），因此同一批数据上可以比较两种估计量：<b>空心点＝等权解</b>、<b>实心点＝高程加权解</b>，虚线圈是各自的 1×DRMS；误差量级 ≈ σ × DOP。注意一个容易搞反的点：把低仰角观测降权后<b>加权 PDOP 反而会略变大</b>（DOP 只描述几何，降权等于让有效几何变差），但那些观测本来就噪声更大，所以加权后的实测误差更小——面板同时给出两个 RMS 让你直接对比。下方的<b>电离层三情景</b>用同一批噪声比较三种电离层处理：「不改正」「L1+模型改正（改掉 70%）」「L1/L2 消电离层组合」。注意两条反直觉结论：①"不改正"的误差<b>不随活跃度线性放大</b>——各星电离层的共同模态被接收机钟差吸收，实测斜距延迟从 25.8 m 涨到 433 m（活跃度 ×20 档；实测比 ≈16.8×），而水平误差只从 7.5 涨到 23.3 m；②双频要实现反超，<b>σ 必须足够小</b>（实测 σ=0.5 m 时双频 5.5 m 才赢过模型改正 7.2 m；σ=1 m 时模型 8.0 m 仍更好），因为消电离层组合把噪声放大 2.978×。把「伪距噪声 σ」拖到 0.5、活跃度切 ×20 就能看到这个交叉点。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-mp" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-mp" hidden>
+    <h2 class="gl-h2">多径与遮挡</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-mp-prn">被反射的卫星</label>
+        <select class="form-select" id="gl-mp-prn"></select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-mp-azim">墙面方位 <span class="tabular-nums" id="gl-mp-azim-val">90°E</span></label>
+        <input class="form-range" type="range" id="gl-mp-azim" min="0" max="350" step="10" value="90">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-mp-dist">接收机到墙 <span class="tabular-nums" id="gl-mp-dist-val">12 m</span></label>
+        <input class="form-range" type="range" id="gl-mp-dist" min="2" max="120" step="1" value="12">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-mp-height">墙高 <span class="tabular-nums" id="gl-mp-height-val">25 m</span></label>
+        <input class="form-range" type="range" id="gl-mp-height" min="2" max="120" step="1" value="25">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-mp-refl">反射系数 <span class="tabular-nums" id="gl-mp-refl-val">0.50</span></label>
+        <input class="form-range" type="range" id="gl-mp-refl" min="0" max="0.9" step="0.05" value="0.5">
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">多出路径</div>
+        <div class="viz-stat-value tabular-nums" id="gl-mp-extra">—</div>
+        <div class="text-small text-muted" id="gl-mp-extra-ctx">反射 − 直达</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">伪距偏差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-mp-bias">—</div>
+        <div class="text-small text-muted" id="gl-mp-bias-ctx">相关器模型</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">引起的水平误差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-mp-err">—</div>
+        <div class="text-small text-muted" id="gl-mp-err-ctx">把偏差喂进最小二乘</div>
+      </div>
+    </div>
+    <div class="gl-two">
+      <canvas id="gl-mp-canvas" role="img" aria-label="多径侧视图：墙、接收机、卫星、直达射线与经墙反射的射线及反射点"></canvas>
+      <canvas id="gl-mp-curve" role="img" aria-label="伪距偏差随接收机到墙距离变化的曲线，当前距离处有标记"></canvas>
+    </div>
+    <p class="text-small text-muted gl-note" id="gl-mp-detail">调墙距与墙高，看反射路径何时被切断。</p>
+    <p class="text-small text-muted gl-lead">这一页看反射如何把码相位推偏；先看反射路径比直达多走多远——一颗星就足以把定位推偏。所以拖「接收机到墙」与「墙高」，看「伪距偏差」卡怎么变。</p>
+    <details class="gl-about"><summary>完整读法（116 字，点开）</summary>
+      <p class="text-small text-muted gl-read">读法：多出路径 = 反射路径 − 直达路径；相关器只在自己 ±1 chip（1 chip ≈ 293 m）内相关；本模型把多径偏差按 exp(−额外延迟/1.5 chip) 衰减，并在 >6 chip 截断（判据 tests/test-multipath.js）。城市里这颗星会被它自己的反射"骗"出几米到几十米的位置误差。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-raim" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-raim" hidden>
+    <h2 class="gl-h2">RAIM 检核（用多余观测找坏星）</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-raim-prn">注入粗差的卫星</label>
+        <select class="form-select" id="gl-raim-prn"></select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-raim-bias">粗差大小 <span class="tabular-nums" id="gl-raim-bias-val">300 m</span></label>
+        <input class="form-range" type="range" id="gl-raim-bias" min="0" max="600" step="10" value="300">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-raim-sigma">伪距噪声 σ <span class="tabular-nums" id="gl-raim-sigma-val">5.0 m</span></label>
+        <input class="form-range" type="range" id="gl-raim-sigma" min="0.5" max="12" step="0.5" value="5">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-raim-run">20 次蒙特卡洛</label>
+        <button class="btn btn-primary" id="gl-raim-run" type="button">运行检核</button>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">检出并正确排除</div>
+        <div class="viz-stat-value tabular-nums" id="gl-raim-det">—</div>
+        <div class="text-small text-muted" id="gl-raim-det-ctx">/ 20 次</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">普通 LS 水平误差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-raim-plain">—</div>
+        <div class="text-small text-muted">中位数</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">RAIM 后水平误差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-raim-after">—</div>
+        <div class="text-small text-muted" id="gl-raim-after-ctx">中位数</div>
+      </div>
+    </div>
+    <div class="gl-two">
+      <canvas id="gl-raim-resid" role="img" aria-label="归一化残差条形图：每颗卫星一根，横线为检测阈值"></canvas>
+      <canvas id="gl-raim-scatter" role="img" aria-label="东-北误差散点：空心点为普通最小二乘解，实心点为 RAIM 排除后解"></canvas>
+    </div>
+    <canvas id="gl-raim-pl" role="img" aria-label="保护限级对照条：实测水平误差、HPL 与 40 m 告警限"></canvas>
+    <p class="text-small text-muted gl-note" id="gl-raim-detail">调粗差大小，看它多大才被检出来。</p>
+    <p class="text-small text-muted gl-lead">这一页用多余观测投票挑坏星；先看哪颗残差最大——剔除后误差明显下降，才说明它是真粗差。所以选一颗星注入「粗差」、点「运行检核」，看它会不会被揪出来。</p>
+    <details class="gl-about"><summary>完整读法（145 字，点开）</summary>
+      <p class="text-small text-muted gl-read">读法：RAIM 用冗余观测"投票"——把残差按各自权重归一化后，超过阈值的那颗最可疑，剔除后重解；下面的保护限级条同时给出 HPL/VPL（当前几何与噪声下误差的界）与 40 m 水平告警限的对照。粗差小于噪声水平时检不出来（这是几何与冗余决定的探测下限），面板里能直接看到这个门限在哪里。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-geo" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-geo" hidden>
+    <h2 class="gl-h2">全球几何</h2>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">当前站点 24 h 中位 PDOP</div>
+        <div class="viz-stat-value tabular-nums" id="gl-geo-here">—</div>
+        <div class="text-small text-muted" id="gl-geo-here-ctx">—</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">最好的站点</div>
+        <div class="viz-stat-value tabular-nums" id="gl-geo-best">—</div>
+        <div class="text-small text-muted" id="gl-geo-best-ctx">中位 PDOP 最小</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">最差的站点</div>
+        <div class="viz-stat-value tabular-nums" id="gl-geo-worst">—</div>
+        <div class="text-small text-muted" id="gl-geo-worst-ctx">中位 PDOP 最大</div>
+      </div>
+    </div>
+    <canvas id="gl-geo-canvas" role="img" aria-label="16 个站点 24 小时中位 PDOP 的水平条形图，含 95 分位须线与当前站点参照线"></canvas>
+    <p class="text-small text-muted gl-note" id="gl-geo-detail">正在扫描 16 个站点…</p>
+    <p class="text-small text-muted gl-lead">这一页比较不同纬度的几何好坏；先看各站点 24 h 中位 PDOP 的条形差——所以同一星座换到另一个纬度，几何好坏会跟着翻转。（本页没有自己的控件：纬度与历元沿用「星座几何」页的）</p>
+    <details class="gl-about"><summary>完整读法（244 字，点开）</summary>
+      <p class="text-small text-muted gl-read">读法：条形＝24 小时内 PDOP 的中位数（15 min 一个采样，共 97 个历元），细须＝95 分位，右端数字＝中位可见星数；当前站点的卡片里还给出「最差历元」——24 颗卫星的构型在某些时刻会留出天空缺口，那个数字能到十几甚至几十。注意：DOP 序列是双峰的，中位数对采样格点较敏感（独立复核实测：把步长从 1 h 加密到 15 min，个别站点中位数会移动 0.1–0.8），所以这里同时给出中位、95 分位与最差历元三个口径；把上面星座面板的纬度拖到另一个半球，虚线会跟着动。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-atm" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-atm" hidden>
+    <h2 class="gl-h2">误差预算</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-atm-freq">载波 <span class="tabular-nums" id="gl-atm-freq-val">L1</span></label>
+        <select class="form-select" id="gl-atm-freq">
+          <option value="1575.42">L1 1575.42 MHz</option>
+          <option value="1227.60">L2 1227.60 MHz</option>
+        </select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-atm-rh">相对湿度 <span class="tabular-nums" id="gl-atm-rh-val">50%</span></label>
+        <input class="form-range" type="range" id="gl-atm-rh" min="0" max="100" step="5" value="50">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-atm-act">电离层活跃度（α 系数倍数）<span class="tabular-nums" id="gl-atm-act-val">×1</span></label>
+        <input class="form-range" type="range" id="gl-atm-act" min="1" max="40" step="1" value="1">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-atm-sig">伪距噪声 σ <span class="tabular-nums" id="gl-atm-sig-val">2.0 m</span></label>
+        <input class="form-range" type="range" id="gl-atm-sig" min="0" max="6" step="0.5" value="2">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-atm-corr">模型改正比例 <span class="tabular-nums" id="gl-atm-corr-val">70%</span></label>
+        <input class="form-range" type="range" id="gl-atm-corr" min="0" max="100" step="5" value="70">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-atm-preset">预设：强扰动 + 低噪声</label>
+        <button class="btn" id="gl-atm-preset" type="button">看双频反超</button>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">天顶总延迟</div>
+        <div class="viz-stat-value tabular-nums" id="gl-atm-zen">—</div>
+        <div class="text-small text-muted" id="gl-atm-zen-ctx">电离层 + 对流层</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">最低仰角卫星的总延迟</div>
+        <div class="viz-stat-value tabular-nums" id="gl-atm-low">—</div>
+        <div class="text-small text-muted" id="gl-atm-low-ctx">—</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">未改正的水平误差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-atm-err">—</div>
+        <div class="text-small text-muted" id="gl-atm-err-ctx">改正后 —</div>
+      </div>
+    </div>
+    <div class="gl-two">
+      <canvas id="gl-atm-canvas" role="img" aria-label="大气延迟随仰角变化：电离层、对流层与合计三条曲线，并标出当前参与解算卫星的仰角"></canvas>
+      <canvas id="gl-atm-err-canvas" role="img" aria-label="水平位置误差随模型改正比例变化的曲线，0% 表示完全不改正"></canvas>
+    </div>
+    <p class="text-small text-muted gl-note" id="gl-atm-detail">正在计算…</p>
+    <p class="text-small text-muted gl-lead">这一页比较电离层改正的取舍；先看低仰角的总延迟——只有模型残差大于双频的噪声代价时，双频才更划算。所以拖「改正比例」看误差收窄，或直接点「看双频反超」预设。</p>
+    <details class="gl-about"><summary>继续读：推导 · 实测数字 · 已知边界（点开）</summary>
+      <p class="text-small text-muted gl-read">把改正比例从 0% 拖到 100%，看误差怎么收窄（Klobuchar 大约只能改掉 50–70%）。再试双频消电离层：L1/L2 组合能把电离层精确消掉（绝对残差实测 1.1e-8 m、相对误差 5e-16），代价是伪距噪声放大 2.978255 倍——所以只有"模型残差 > 噪声代价"时才划算：活跃度 ×1 时模型改正更好（约 2.9 m vs 8.5 m）；把活跃度拖到 ×20 且 σ 降到 0.5 m，双频才反超（实测 5.5 m vs 7.2 m；σ=1 m 时仍是模型 8.0 m 更好）——点右侧预设按钮可以直接看这个拐点。真实接收机正是在强扰动或无模型可用时才切双频。</p>
+    </details>
+  </div>
+
+  <div id="gl-panel-cold" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-cold" hidden>
+    <h2 class="gl-h2">冷启动</h2>
+    <p class="text-small text-muted gl-note" id="gl-cold-phase" role="status" aria-live="polite">点「执行冷启动」开始（首次打开会自动算一次，约 4–5 秒；期间可以切到别的标签页）</p>
+    <div class="viz-controls">
+      <details class="gl-cold-group">
+        <summary class="gl-legend">① 场景（卫星数 / 历元数 / 历元间隔）</summary>
+        <div class="gl-group">
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-n">参与冷启动的卫星 <span class="tabular-nums" id="gl-cold-n-val">6</span></label>
+                <input class="form-range" type="range" id="gl-cold-n" min="4" max="8" step="1" value="6">
+              </div>
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-epochs">累加历元 N <span class="tabular-nums" id="gl-cold-epochs-val">8</span></label>
+                <input class="form-range" type="range" id="gl-cold-epochs" min="1" max="8" step="1" value="8">
+              </div>
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-step">历元间隔 <span class="tabular-nums" id="gl-cold-step-val">100 ms</span></label>
+                <input class="form-range" type="range" id="gl-cold-step" min="0" max="0.3" step="0.01" value="0.1">
+              </div>
+        </div>
+      </details>
+      <details class="gl-cold-group">
+        <summary class="gl-legend">② 接收机前端 —— 决定码相位精度上限</summary>
+        <div class="gl-group">
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-frontbw">前端带宽（IF 滤波）</label>
+                <select class="form-select" id="gl-cold-frontbw">
+                  <option value="0">理想方波（旧模型 · 峰顶是平台）</option>
+                  <option value="8">8 MHz 带限（光滑丘）</option>
+                  <option value="4">4 MHz 带限（光滑丘）</option>
+                  <option value="2">2 MHz 带限（光滑丘）</option>
+                </select>
+              </div>
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-fine">接收机采样率（ADC 档）</label>
+                <select class="form-select" id="gl-cold-fine">
+                  <option value="4">4 采样/chip（平台宽 73 m · 只做粗捕）</option>
+                  <option value="16" selected>16 采样/chip（平台宽 18 m · 两级搜索+跟踪）</option>
+                  <option value="40">40 采样/chip（平台宽 7.3 m · 两级搜索+跟踪）</option>
+                </select>
+              </div>
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-snr">信号信噪比</label>
+                <select class="form-select" id="gl-cold-snr">
+                  <option value="-20">−20 dB（边缘检测，码噪声 ~25 m）</option>
+                  <option value="-14">−14 dB（码噪声 ~12 m）</option>
+                  <option value="-8">−8 dB（码噪声 ~6 m，看得见电离层）</option>
+                </select>
+              </div>
+        </div>
+      </details>
+      <details class="gl-cold-group">
+        <summary class="gl-legend">③ 电离层</summary>
+        <div class="gl-group">
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-iono">电离层处理</label>
+                <select class="form-select" id="gl-cold-iono">
+                  <option value="none">不改正（全斜距延迟）</option>
+                  <option value="model">模型改正（剩 30% 残差）</option>
+                  <option value="dual">L1/L2 双频（消电离层 · 噪声 ×2.978）</option>
+                </select>
+              </div>
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-iono-act">电离层活跃度</label>
+                <select class="form-select" id="gl-cold-iono-act">
+                  <option value="1">×1 平静</option>
+                  <option value="5">×5 中等</option>
+                  <option value="20">×20 强扰动</option>
+                </select>
+              </div>
+        </div>
+      </details>
+      <div class="gl-group">
+        <p class="gl-legend">④ 算法与执行</p>
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-mode">历元间策略</label>
+                <select class="form-select" id="gl-cold-mode">
+                  <option value="dll">首历元捕获 + 跟踪环（真实接收机）</option>
+                  <option value="avg">每历元独立捕获 + 平均（对照）</option>
+                </select>
+              </div>
+        <div class="gl-field">
+                <label class="form-check"><input class="form-check-input" type="checkbox" id="gl-cold-kf" checked><span class="form-check-label">跟踪态加 8 维卡尔曼滤波</span></label>
+              </div>
+        <div class="gl-field">
+                <label class="form-label" for="gl-cold-run">逐颗串行搜索（真实计算时间）</label>
+                <button class="btn btn-primary" id="gl-cold-run" type="button">执行冷启动</button>
+              </div>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">累计捕获耗时</div>
+        <div class="viz-stat-value tabular-nums" id="gl-cold-time">—</div>
+        <div class="text-small text-muted" id="gl-cold-time-ctx">未开始</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">捕获成功</div>
+        <div class="viz-stat-value tabular-nums" id="gl-cold-ok">—</div>
+        <div class="text-small text-muted" id="gl-cold-ok-ctx">未开始</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted" id="gl-cold-err-label">首次定位误差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-cold-err">—</div>
+        <div class="text-small text-muted" id="gl-cold-err-ctx">未开始</div>
+      </div>
+    </div>
+    <div class="gl-two">
+      <canvas id="gl-cold-canvas" role="img" aria-label="每颗卫星的二维捕获耗时条形图，并标注码相位误差、多普勒误差与相关峰信噪比"></canvas>
+      <canvas id="gl-cold-ttff" role="img" aria-label="累计耗时阶梯图：横轴为第 n 颗卫星，纵轴为累计毫秒"></canvas>
+    </div>
+    <canvas id="gl-cold-epoch-canvas" role="img" aria-label="首次定位误差随累加历元数下降的曲线，并给出 1 除以根号 N 的参考线"></canvas>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-dll-slope">每历元码相位漂移 <span class="tabular-nums" id="gl-dll-slope-val">0.27 chip</span></label>
+        <input class="form-range" type="range" id="gl-dll-slope" min="0" max="0.6" step="0.01" value="0.27">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-dll-run">同一颗卫星、同一批噪声种子，两种策略对比</label>
+        <button class="btn" id="gl-dll-run" type="button">跑 20 历元：快照平均 vs 跟踪环</button>
+      </div>
+    </div>
+    <canvas id="gl-dll-canvas" role="img" aria-label="码相位误差随历元变化：快照平均对标与二阶跟踪环对比"></canvas>
+    <p class="text-small text-muted gl-note" id="gl-dll-note">点上面的按钮：快照平均（每历元独立捕获再累加平均）与二阶 DLL 跟踪环在同一动态下的误差对比。</p>
+    <p class="text-small text-muted gl-lead">这一页从零跑一次完整冷启动（捕获 → 跟踪 → 定位）；先看「累计捕获耗时」（TTFF）与「首次定位误差」两张卡——点「执行冷启动」跑一次就有。所以精度上限主要由采样率与前端带宽决定。</p>
+    <details class="gl-about"><summary>继续读：推导 · 实测数字 · 已知边界（点开）</summary>
+      <p class="text-small text-muted gl-read"><b>快照平均</b>把 N 个历元的不同时刻当同一个值平均，稳态滞后 ≈ 斜率·(N−1)/2，20 历元就是 2.57 chip ≈ 752 m——这是结构性的，加历元只会更差；<b>二阶跟踪环</b>用早迟门判别器 + PI 环路把匀速滞后压到 15 m。把漂移滑块调回 0，两者都会贴到 4 采样/chip 的信息下限上（≈21 m RMS；老版本这里写"±37 m"，那是平台半宽而不是 RMS，见下面冷启动面板的勘误）；再把环路参数换成一阶（判据里 beta=0），低带宽时会直接失锁（实测 α=0.25 时滞后 386 m）——这就是真实接收机必须用二阶环路的原因。</p>
+    </details>
+    <div class="progress gl-progress" role="progressbar" aria-label="冷启动进度" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="gl-cold-prog-wrap">
+      <div class="progress-bar" id="gl-cold-prog" style="width:0%"></div>
+    </div>
+    <p class="text-small text-muted gl-note" id="gl-cold-detail">点「执行冷启动」：逐颗生成中频信号、做二维捕获、精修码相位，再重建伪距并定位。</p>
+        <p class="text-small text-muted gl-lead">这一段怎么用：先调 <b>②前端</b> 与 <b>①场景</b> 两个框，点「执行冷启动」，对照上面三个数字和三张图的变化；想看清因果就一次只改一个档再重跑。（窄屏上 ①②③ 默认收起，点组标题展开再调参）</p>
+    <details class="gl-about">
+      <summary>详细说明：平台机制 · 两级搜索 · 前端带宽 · 实测与勘误（点开）</summary>
+<p class="text-small text-muted gl-read"><b>为什么"精修"能到 18 m —— 以及为什么提高信噪比没用。</b>本工程的中频信号和接收机复制码都是<b>按采样格硬采样</b>的 ±1 方波（每个 chip 内取值恒定），所以落在<b>同一采样格</b>内的所有码相位会让相关器看到<b>逐样本完全相同</b>的码序列 ⇒ 相关值<b>逐位相同</b>（真的是同一个浮点数）。峰顶因此是一段宽 <span class="tabular-nums">W = 1 个采样格</span> 的<b>平台</b>：</p>
+    <ul class="text-small text-muted gl-read">
+      <li><span class="tabular-nums">4 采样/chip</span>：W = 0.25 chip ≈ 73 m。取「首个最大」恒落在平台<b>左边缘</b>，误差 RMS ≈ W/√3 = 42 m；取<b>平台中心</b>才是无偏的，RMS = W/√12 ≈ 21 m。<b>老版本面板写的「±37 m 下限」其实是平台半宽</b>，不是 RMS。</li>
+      <li><b>本场景下提高信噪比无效（正确说法是"已饱和"）</b>：平台内是同一个浮点数，噪声不改变它——实测 −20 dB 与 60 dB 给出的估计<b>逐位相同</b>（判据 <code>tests/test-finesearch.js</code> 已锁死）。<b>但它不是无条件的</b>：多径/带限失配会打破"码序列恒等"（|a₂|=0.9 时两档差 25 m），信噪比低到约 −35 dB 起会跑错平台（判据：平台间余量最小时只到均值 −2.4σ）。"SNR 档看不出电离层交叉点"的真正原因在这里，不在 SNR 上限。</li>
+      <li><b>粗值错了怎么办（幅度门）</b>：平台内逐点相等，所以如果粗捕的码相位已经错了 ≥1 chip，窗里每个格点都是旁瓣/噪声、峰形照样长成"平台"，会<b>静默给错答案</b>——实测偏 3 chip、200 个噪声种子时"峰落窗边缘"只报警 20%。可靠的门是<b>每样本幅度</b> ampPerSample（码对齐 ≈1，滑到旁瓣/噪声 ≈0.03）；低于 0.35 就退回旧精修并计数。它同时能抓住"本振多普勒给错"（给 0 而真值 1200 Hz 时相关塌掉）。</li>
+      <li><b>两个量别混</b>：<b>平台宽</b>（分辨率元）= 1 采样格 = c/f<sub>s</sub>，4/16/40 采样/chip 分别是 73.3 / 18.3 / 7.3 m；<b>平台中心下限</b> = 平台宽/√12 = 21.2 / 5.3 / 2.1 m。老文案的「±37 m」是 4 采样/chip 的<b>平台半宽</b>（=73.3/2），不是 RMS。</li>
+      <li><b>唯一杠杆是采样率</b>：两级搜索 = 4 采样/chip 全码粗捕（±0.125 chip）→ 在 ±0.5 chip 窄窗内用 16/40 采样/chip 信号重做相关并取平台中心。分辨率 18.3 m / 7.3 m，而代价只有粗捕的 <span class="tabular-nums">3%–9%</span>（窄窗只扫 17/41 个格点，全码是 1023 格 × 41 个多普勒）。</li>
+    </ul>
+    <p class="text-small text-muted gl-read"><b>实测（本机 JS 真实计算时间，6 颗星 × 8 历元，本页默认场景）：</b>
+      ADC 档 4 → 16 → 40 采样/chip 时，码相位 RMS <span class="tabular-nums">36.7 → 11.4 → 4.0 m</span>，
+      逐历元原始定位 RMS <span class="tabular-nums">74.1 → 28.8 → 12.8 m</span>（载波平滑后 46.1 → 10.7 → 9.7 m，卡尔曼后 39.7 → 8.9 → 8.2 m），
+      而 TTFF 几乎没有变化（三次独立运行都在 <span class="tabular-nums">2.4–3.1 s</span>，差 ±12%；其中细修只占 <span class="tabular-nums">8 / 60 / 380 ms</span>）——粗捕的成本大头是那道 1023² 的循环相关，它跟采样率无关。
+      也就是说：<b>在"采样率"这一维上，精度几乎是免费的</b>，这正是真实接收机愿意用 16–40 倍过采样去做码相位的原因。<br><b>单次实现的方差（勘误）</b>：上面「载波平滑 / 卡尔曼」两列是<b>一次固定种子</b>的结果（本页因此可复现），但换一组噪声种子会在 ±十几米范围内波动——独立复核里换种子后理想方波档反而更好。判据用的是 40 组独立噪声取均值（LS 84.3 → KF 40.5 m），所以别用单次实现给「哪一档更好」下结论。
+      （口径提醒：上面那行"码相位 RMS"是<b>整条链路</b>的逐历元 RMS，主要由末历元的 DLL 跟踪决定；
+      精修本身在<b>首历元</b>的 RMS 是 <span class="tabular-nums">13.0 / 6.4 / 1.9 m</span>，面板明细里分行标注。
+      另外跟踪单次的耗时随 ADC 档线性增长——树上的 1023² 全码相关与采样率无关，而 DLL 的相关长度随之翻倍。）</p>
+    <p class="text-small text-muted gl-read"><b>那个"台阶"其实有两个来源，其中一半是<b>我自己实现的伪影</b>。</b>
+      上面"平台内逐点相等"的前提是<b>复制码也按整数样本量化</b>——相关值在一整格内逐位相同，把信号侧本来有的信息也遮住了。
+      真实接收机不这么干：前端带宽（2–8 MHz 的 IF 滤波）把方波磨成光滑码波形，码 NCO 又是<b>分数延迟</b>的。两者补齐后，
+      相关峰顶就从"平台"变成<b>光滑丘</b>，插值才真的有信息。<b>本页面把这两件事都做成了可切换的档位</b>：</p>
+    <ul class="text-small text-muted gl-read">
+      <li><b>「前端带宽（IF 滤波）」</b>：理想方波 / 8 / 4 / 2 MHz。带限档把理想 ±1 方波过一遍高斯低通
+        （σ = 0.13251·R<sub>code</sub>/BW —— 这个常数才对应**真正的 −3 dB 带宽**；平坦段仍严格 ±1，只把跳变抹成斜坡。原先写的 0.3748 差了 2√2 倍，等于把"4 MHz 档"做成了 1.41 MHz，已按实测全部改过）；同一档位下
+        <code>fineSearch</code> 会自动把复制码也换成<b>分数延迟查表</b>（<code>replicaBwHz</code> 默认跟随信号），
+        并用 <code>auto</code> 估计器判断峰顶是平台还是光滑丘。</li>
+      <li><b>实测（ADC 16 采样/chip、6 颗 × 8 历元）</b>：首历元精修 RMS <span class="tabular-nums">6.35 → 4.74 / 2.53 / 2.67 m</span>（理想 → 8 / 4 / 2 MHz），
+        链路码相位 RMS <span class="tabular-nums">11.4 → 6.1 / 4.8 / 4.6 m</span>，逐历元原始定位 RMS <span class="tabular-nums">28.8 → 22.4 / 22.1 / 21.8 m</span>。
+        <b>注意不是"越宽越好"：8 MHz 档反而最差</b>（链路 6.1 m）——16 采样/chip 的奈奎斯特是 8.18 MHz，
+        最优点落在 <b>≈4 MHz（f_s/4）</b>；而 4 采样/chip（奈奎斯特 2.05 MHz）下最优是 2 MHz，更宽的前端只会被混叠
+        （实测 4 spc 的 16 MHz 档 27.8 m vs 2 MHz 档 18.0 m）。结论：<b>带宽要与采样率匹配（约 f_s/4 ~ f_s/2）且不得超过奈奎斯特</b>。</li>
+      <li><b>控制实验（防止我把伪影当物理）</b>：理想方波信号 + 分数延迟复制码 = 22.06 / 5.69 m
+        （4/16 采样/chip），正好卡在信息下限 W/√12 上 ⇒ <b>只换复制码并不能突破</b>，因为信号侧格内信息真的是 0。
+        带限信号 + 分数延迟复制码在 <b>16 采样/chip + 4 MHz</b> 上到 1.16 m（0.22× 下限）⇒ 突破成立；
+        但同一带宽换到 4 采样/chip（奈奎斯特只有 2.05 MHz）就**回到下限**（21.84 m ≈ 21.15 m）——
+        带宽被混叠掉，信号侧信息又变回≈0。所以本页面演示的是"采样率 + 前端带宽如何共同决定信息下限"。</li>
+    </ul>
+    <p class="text-small text-muted gl-read"><b>诚实标注：那两个"退步"其实不是退化。</b>带限档下 Hatch / 卡尔的数字看着更差（10.7 → 16.0 m、8.9 → 12.6 m），但 ds4.1 子代理独立复核（含逐历元手工复算）表明：「增长窗口」的载波平滑在数学上就是<b>码误差的滑动平均</b>，两档这段滑动平均的量级相同（≈3.2 m），只是<b>方向不同</b>；位置误差是它经高 DOP 几何投影的结果（本几何投影增益 ×1.9–4.4）。<b>决定性证据</b>：只换噪声种子，两档优劣就翻转（种子 +1000：带限 8.4 m 反而优于理想 16.4 m）。所以这两个数是<b>单次实现</b>的结果，其方差大于两档的真实差异 —— 要严谨比较必须多实现取均值（列为下一轮第一优先）。同一轮复核还证伪了两条候选根因：DLL 残余多普勒（带限档 S 曲线过零点对 Δf 全为 0.00 m）与载波速率偏差（实测 0.002–0.003 m/历元，不是 1 m/历元）。</p>
+    <p class="text-small text-muted gl-read">读法：这是<b>冷启动 → 跟踪态</b>的完整链路。面板有两种历元间策略：<b>「首历元捕获 + 跟踪环」</b>（真实接收机流程）只在第 0 历元做 101 格二维捕获（多普勒步长 100 Hz；这就是 TTFF，只计捕获耗时、不含首次定位解算），之后每个历元只做 2 组窄相关交给二阶 DLL，单次耗时比重新捕获便宜 6–16×（4 采样/chip 档约 45×——跟踪的相关长度随 ADC 档线性增长，而粗捕的成本大头是与采样率无关的 1023² 全码相关）；<b>「每历元独立捕获 + 平均」</b>是常见的"想当然"做法，每历元都重做一次全搜索。「历元间隔」滑块决定历元之间卫星跑多远：100 ms × 800 m/s 视向速度 ≈ 79 m ≈ 0.27 chip。把间隔拖到 0，两种策略都会贴到<b>采样率决定的信息下限</b>上：4 采样/chip 时 ≈21 m（平台宽 73 m 的平台中心），16 采样/chip 精修后 ≈5.3 m——注意提高信噪比并不能跨过这条线（下面「码相位精修采样率」段落有完整推导）；一旦有间隔，"独立捕获 + 平均"会把不同时刻的码相位当成同一个值平均，产生斜率·(N−1)/2 的结构性滞后（N=8、0.27 chip/历元 → 约 0.95 chip ≈ 280 m，而且 N 越大越差），跟踪环则把匀速滞后压到十几米——这就是接收机必须"先捕获、后跟踪"的原因。勾上「跟踪态加 8 维卡尔曼滤波」后，逐历元的伪距会再过一个 8 维 CV 卡尔曼（状态 = 位置 + 钟差 + 速度 + 钟漂，过程噪声按 σa = 0.5 m/s² 离散化）：曲线上那条绿色虚线就是滤波输出，本页当前场景实测逐历元 RMS 从 <b>28.8 m 压到 8.9 m</b>（3.2×），抖动从 10–39 m 收敛到 3–9 m。它<b>不会</b>修掉"独立捕获 + 平均"的结构性滞后（那种偏差不是噪声，对照模式下滤波后仍有 106 m），这也说明"先跟踪、再滤波"两个环节各管一件事。整毫秒模糊度用粗略位置（±15 km）与粗略钟差先验解开，这也正是接收机需要大致位置/时间的原因。</p>
+    </details>
+
+  </div>
+
+  <div id="gl-panel-pll" class="gl-panel" role="tabpanel" aria-labelledby="gl-tab-pll" hidden>
+    <h2 class="gl-h2">载波跟踪</h2>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-pll-order">环路阶数</label>
+        <select class="form-select" id="gl-pll-order">
+          <option value="2">二阶 PI（α=0.4, β=0.02）</option>
+          <option value="1">一阶（β=0，只有比例项）</option>
+        </select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pll-disc">鉴相器</label>
+        <select class="form-select" id="gl-pll-disc">
+          <option value="atan">atan2(Q,I) 相位锁定型</option>
+          <option value="costas">Costas I·Q/(I²+Q²) 免疫 180° 翻转</option>
+        </select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pll-fres">残余多普勒 <span class="tabular-nums" id="gl-pll-fres-val">2.0 Hz</span></label>
+        <input class="form-range" type="range" id="gl-pll-fres" min="0" max="6" step="0.5" value="2">
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pll-snr">信号信噪比 <span class="tabular-nums" id="gl-pll-snr-val">−20 dB</span></label>
+        <input class="form-range" type="range" id="gl-pll-snr" min="-30" max="-10" step="1" value="-20">
+      </div>
+      <div class="gl-field">
+        <label class="form-check"><input class="form-check-input" type="checkbox" id="gl-pll-flip" checked><span class="form-check-label">第 20 历元插入 180° 数据位翻转</span></label>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-pll-run">40 历元 × 4 ms 相干积分</label>
+        <button class="btn btn-primary" id="gl-pll-run" type="button">跑载波环</button>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">稳态相位误差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-pll-rms">—</div>
+        <div class="text-small text-muted" id="gl-pll-rms-ctx">后 20 历元</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">残余频差估计</div>
+        <div class="viz-stat-value tabular-nums" id="gl-pll-freq">—</div>
+        <div class="text-small text-muted" id="gl-pll-freq-ctx">环路输出</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">锁定状态</div>
+        <div class="viz-stat-value tabular-nums" id="gl-pll-lock">—</div>
+        <div class="text-small text-muted" id="gl-pll-lock-ctx">稳态鉴别器口径</div>
+      </div>
+    </div>
+    <div class="gl-two">
+      <canvas id="gl-pll-iq" role="img" aria-label="解调后的 I/Q 星座图：锁定过程让散点收敛到 +I 方向"></canvas>
+      <canvas id="gl-pll-phase" role="img" aria-label="载波相位误差与鉴别器输出随历元的变化"></canvas>
+    </div>
+    <p class="text-small text-muted gl-note" id="gl-pll-detail">点「跑载波环」：每历元做 4 ms 相干积分取 prompt I/Q，鉴相器（默认 Costas：I·Q/(I²+Q²)；可切 atan2(Q,I)）后经 PI 环路更新本振相位。</p>
+    <p class="text-small text-muted gl-lead">这一页看载波环怎么跟上信号；先看 IQ 星座收没收敛、相位误差压到多低——所以切「环路阶数」或勾选「数据位翻转」，锁定表现会明显不同。</p>
+    <details class="gl-about"><summary>继续读：推导 · 实测数字 · 已知边界（点开）</summary>
+      <p class="text-small text-muted gl-read">把「环路阶数」切到一阶、残余多普勒拉 2 Hz：一阶环留下 <b>≈0.4 rad</b> 稳态滞后（教科书值 2πf·dt/α = 0.42 rad），二阶环压到 <b>0.008 rad</b>；但多普勒变化率会让二阶环留 ≈0.09 rad 残余——那要三阶环。勾选「180° 数据位翻转」再跑，注意<b>切到 atan2 鉴相时会被翻转踢动</b>（它会跟到翻转后的相位）；真正对 180° 免疫的是 Costas 鉴相 `I·Q/(I²+Q²)`——契约里 `opts.disc` 可选，实测翻转后 Costas 环的 NCO 相位纹丝不动（稳态 max|d|=0.10），这正是导航电文比特跳变时仍能连续跟踪的原因。注意本振频率必须由捕获给出：频率初值设 0 时 1200 Hz 多普勒在 4 ms 内转 4.8 圈、相关直接对消（判据里有这条反例）。还有一条**结构性限制**必须知道：细块只有 4 ms，块到块的相位推进存在 <b>±125 Hz 模糊</b>（判据实测：dop=800 Hz 时无论本振初值取 700/800/900 Hz，环路频差输出都收敛到 +50 Hz——它是"混叠后的绝对量"、不是"残余"）；混叠量逼近 ±125 Hz 时 atan 牵不入，而 Costas 会"假锁"（相位每块翻 π 但鉴相器看不见）。所以下面的"PLL 锁定 n/6"要配合"其中多少颗是靠第二遍 Costas 补锁的"一起看，后者可能是假锁；彻底修法（加 FLL 叉积鉴频器 / 拉长相干积分）已记在 `CONTRACT-v16.md`。<br>「信号信噪比」档要注意一个**反直觉结果**：从 −20 dB 提到 −8 dB，码相位 RMS 仍停在 <b>~20–28 m</b>——因为误差已被 <b>4 采样/chip 的平台宽</b>（1 个采样格 = 0.25 chip ≈ 73 m，半宽 ±37 m）压住，信噪比不是有效杠杆。要再降必须提高采样率：平台宽 4/16/40 采样/chip = 73.3/18.3/7.3 m，<b>平台中心估计的信息下限</b>（＝平台宽/√12）= 21.2/5.3/2.1 m（Node 判据实测）。同理，电离层在 ×20 强扰动时（L1 斜距延迟 51 m）引起的十几米位置偏差**淹没在量化噪声里**，所以冷启动档看不出"模型 vs 双频"的交叉点——那个交叉点只在低噪声链路（定位面板 σ≤0.5 m）才显形。</p>
+    </details>
+    <div class="viz-controls">
+      <div class="gl-field">
+        <label class="form-label" for="gl-hatch-window">平滑窗口</label>
+        <select class="form-select" id="gl-hatch-window">
+          <option value="0">增长窗口（N=1,2,3,…）</option>
+          <option value="20">固定 N=20</option>
+          <option value="100">固定 N=100</option>
+        </select>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-hatch-bias">初始码偏差 <span class="tabular-nums" id="gl-hatch-bias-val">15 m</span></label>
+        <input class="form-range" type="range" id="gl-hatch-bias" min="0" max="30" step="1" value="15">
+      </div>
+      <div class="gl-field">
+        <label class="form-check"><input class="form-check-input" type="checkbox" id="gl-hatch-slip"><span class="form-check-label">第 100 历元插入 2000 周周跳</span></label>
+      </div>
+      <div class="gl-field">
+        <label class="form-label" for="gl-hatch-run">200 历元 · 码噪声 σ=30 m · 载波噪声 1 cm</label>
+        <button class="btn" id="gl-hatch-run" type="button">跑载波平滑</button>
+      </div>
+    </div>
+    <div class="viz-grid gl-stats">
+      <div class="card viz-stat">
+        <div class="text-small text-muted">平滑后稳态抖动</div>
+        <div class="viz-stat-value tabular-nums" id="gl-hatch-std">—</div>
+        <div class="text-small text-muted" id="gl-hatch-std-ctx">后 50 历元 · 对比码噪声 30 m</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">末历元误差</div>
+        <div class="viz-stat-value tabular-nums" id="gl-hatch-last">—</div>
+        <div class="text-small text-muted" id="gl-hatch-last-ctx">含初始码偏差</div>
+      </div>
+      <div class="card viz-stat">
+        <div class="text-small text-muted">周跳重置</div>
+        <div class="viz-stat-value tabular-nums" id="gl-hatch-resets">—</div>
+        <div class="text-small text-muted" id="gl-hatch-resets-ctx">阈值 4.5σ = 135 m</div>
+      </div>
+    </div>
+    <canvas id="gl-hatch-canvas" role="img" aria-label="码伪距误差与载波平滑后误差随历元变化"></canvas>
+    <p class="text-small text-muted gl-note" id="gl-hatch-detail">点「跑载波平滑」：用载波相位差分平滑码伪距（Hatch 滤波）。</p>
+    <p class="text-small text-muted gl-lead">这一段（载波平滑）怎么读：灰线是<b>原始码伪距误差</b>（±30 m 抖动），蓝线是<b>载波平滑后</b>的误差。窗口用「增长」时抖动会掉到 <b>0.34 m</b> 量级（面板实测 ≈89×）——因为平滑本质上把码的绝对精度"锁"在第一次测量上、之后只靠载波差分（厘米级）跟踪变化。</p>
+    <details class="gl-about"><summary>继续读：推导 · 实测数字 · 已知边界（点开）</summary>
+      <p class="text-small text-muted gl-read">三个必须看清的边界：①把「初始码偏差」拖到 15 m，平滑后误差就稳定在 15 m 左右——<b>平滑消不掉初始码偏差</b>（多径/群延迟），它只压噪声；②换成固定窗口 N=20，抖动回到 ~3 m，这是有限窗口的噪声地板；③勾上周跳：2000 周（≈380 m）会被 4.5σ=135 m 阈值检出并重置，但重置后绝对误差回到"重置那一帧的码测量误差"量级（实测 11 m vs 不检测的 195 m）；而 10 周（1.9 m）这种小周跳低于码噪声，单历元判据根本看不见，会被平滑悄悄吸收成偏差。真实接收机所以要用多频/几何组合做周跳检测。</p>
+    </details>
+  </div>
+  </div>
+  <details class="gl-about">
+    <summary class="text-small text-muted">这些数是怎么算出来的（点开）</summary>
+    <ul class="text-small text-muted">
+      <li><strong>星座几何</strong>：可切「仅 GPS（24 颗）」/「+Galileo（48）」/「+BeiDou（72）」三档——三套系统都是解析圆轨道（GPS a = 26561.75 km、i = 55°，Galileo a = 29599.8 km、i = 56°，BeiDou-3 MEO a = 27906.1 km、i = 55°），轨道面升交点随地球自转以 −Ωe·t 西漂；GPS 单系统的位置与早期版本逐位一致。实测同一时刻可见星 7 → 21 颗、PDOP 2.81 → 1.06。接收机位置用 WGS-84。DOP 来自观测矩阵 G = [−u, 1] 的 (GᵀG)⁻¹，HDOP/VDOP 是把位置协方差旋转到当地 ENU 后取对角。</li>
+      <li><strong>真实星座</strong>：切到「真实 GPS」后换成 2026-10-05 抓取的 32 颗在轨 GPS 平均根数（CelesTrak <code>gp.php?GROUP=gps-ops</code>），用<b>简化开普勒传播</b>：牛顿迭代解 E − e·sinE = M、真近点角 ν = 2·atan2(√(1+e)·sin(E/2), √(1−e)·cos(E/2))，轨道面旋转 Rz(Ω)·Rx(i)·Rz(ω) 到惯性系，再用 GMST 反旋到地固系（ECEF = Rz(−θ)·ECI，θ 按 280.46061837° + 360.98564736629°·(JD − 2451545) 由<b>统一参考时刻</b> T0 = 2026-10-05T22:32:31.853Z 起算）。32 颗元素历元跨度 18.62 天，本模块不做 SGP4 / J2 长期项：与「加 J2 长期项」的独立对照实测（review/probe-j2-error.js），新鲜 28 颗（外推龄 ≤2 天）中位差 <b>4.2 km</b>、最大 <b>22 km</b>，最老的 PRN21（18.62 天）<b>151 km</b> —— 所以这一档只保证几何结构可信。</li>
+      <li><strong>C/A 码</strong>：G1/G2 两个 10 级 LFSR（1+x³+x¹⁰ 与 1+x²+x³+x⁶+x⁸+x⁹+x¹⁰），G2 按 IS-GPS-200 抽头表做异或选择，chip = G1 ⊕ G2，周期 1023，码率 1.023 Mchip/s，1 chip ≈ 293 m。</li>
+      <li><strong>捕获</strong>：4 ms 中频信号按 41 个多普勒格混频（乘 e^(−j2πft)），对码相位做循环相关；相干积分 4 ms 相当于约 36 dB 处理增益，再在胜出的多普勒行精修到 1 个采样点。</li>
+      <li><strong>定位与检核</strong>：对 [x, y, z, c·dt] 做线性化最小二乘（Householder QR）；定位面板在<b>同一批数据</b>上跑两种估计量——等权与高程加权（σ(el)² = σ<sub>z</sub>² + (σ<sub>h</sub>/sin el)²，低仰角自动降权，加权 DOP 用 (GᵀW̃G)⁻¹）。RAIM 用帽子矩阵对角元把残差归一化，超过阈值就剔除一颗粗差卫星后重解，下拉里给出每颗星的<b>杠杆</b>（越接近 1，这颗星的粗差越容易被解自己吸收、越难检出）。</li>
+      <li><strong>冷启动全链</strong>：逐颗生成 4 ms 中频信号（多普勒取自卫星径向速度、码相位取自几何距离+接收机钟差）→ 41 个多普勒格的二维捕获 → 抛物插值把码相位精修到亚采样 → 用粗略位置/钟差先验解开整毫秒模糊度 → 最小二乘得到首次定位。单历元快照的首历元码相位精修 RMS 实测 <b>6.35 m</b>（理想方波前端）／<b>2.53 m</b>（4 MHz 带限前端），所以首次定位在几十米量级；真实接收机靠更高采样率/插值、成形滤波与跟踪环（DLL/PLL）把码相位精度再提升 1–2 个数量级。</li>
+      <li><strong>导航滤波（8 维 CV 卡尔曼）</strong>：跟踪态逐历元的定位解仍然抖（6 颗星、PDOP≈2.8 时 43–219 m），再挂一层卡尔曼就能压平——状态 `[x,y,z,clk,vx,vy,vz,clkRate]`，预测用匀速模型（位置-速度块 dt³/3、dt²/2、dt 离散化过程噪声），量测是伪距 `ρ=|s−p|+clk`（`H=[−u,1,0,0,0,0]`、`R=σ_pr²I`），更新 `K=PHᵀ(HPHᵀ+R)⁻¹`、`P←(I−KH)P` 后强制对称。本页当前场景实测逐历元 RMS <b>28.8 m → 8.9 m（3.2×）</b>；Node 判据里 40 组独立噪声的实测是 LS 84.3 m → KF 40.5 m（2.08×）、动态 5 m/s 下 2.15×，并且通过一致性体检：<b>NEES 2.78（理论 3.0）</b>、<b>95% 置信椭球覆盖率 96.5%（理论 95%）</b>—— 只比 RMS 的判据会被"把过程噪声调小、过度自信"骗过，NEES 不会。</li>
+      <li><strong>误差量级</strong>：−30 dB 时 4 ms 相干积分的理论峰仅约 5.7σ，而 折叠后 ≈4.2 万个等效噪声格（原始搜索面 4092×41）的最大噪声约 4.6σ，所以那是「边缘检测」；真实接收机靠多历元累加或多普勒辅助把它拉回来。城市多径会让伪距多出一段反射路径长度（按几何衰减）。误差预算面板把大气也算进来：天顶几米、5° 低仰角可达几十米（随太阳活动/时段/湿度变化；本页当前场景实测天顶 ≈7 m、5° ≈42 m），但所有卫星<b>共同</b>的那部分会被接收机钟差吸收，真正影响定位的是各方向延迟的不一致。</li>
+    </ul>
+  </details>
+
+</div>

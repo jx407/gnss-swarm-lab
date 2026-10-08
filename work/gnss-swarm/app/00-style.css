@@ -1,0 +1,129 @@
+#gnss-lab { width: 100%; }
+#gnss-lab canvas { display: block; width: 100%; }
+#gnss-lab .gl-field { flex: 1 1 140px; min-width: 0; }
+#gnss-lab .gl-stats { margin: 12px 0 8px; }
+#gnss-lab .gl-note { margin: 8px 0 0; }
+#gnss-lab .gl-progress { margin-top: 8px; }
+#gnss-lab .gl-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 20px; align-items: start; }
+#gnss-lab .gl-two > canvas { min-width: 0; }
+@media (max-width: 620px) { #gnss-lab .gl-two { grid-template-columns: minmax(0, 1fr); } }
+#gnss-lab .gl-read { margin: 8px 0 0; max-width: 72ch; }
+#gnss-lab .gl-about { margin: 18px 0 0; }
+#gnss-lab .gl-about summary { cursor: pointer; }
+#gnss-lab .gl-about ul { margin: 8px 0 0; padding-left: 18px; }
+#gnss-lab .gl-about li { margin: 4px 0; max-width: 76ch; }
+
+/* v22：控制分组（把 10+ 个控件按语义装进带标题的框，避免"一屏全是控件"） */
+#gnss-lab .gl-group { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end;
+  border: 1px solid var(--card-border, var(--border, #d8dbe0)); border-radius: 10px; padding: 8px 12px 10px; }
+/* v22：冷启动 ①②③ 参数组窄屏折叠（渐进披露；Sagan 实测 420 px 省 ~431 px），桌面由 JS 展开。
+   注意：<details> 自己当 flex 容器时，内部的 .gl-field **不再是 flex 项**（实测 980 px 下每字段只剩 129 px、
+   竖排），所以外壳只管边框与折叠，真正的 flex 行由内部 .gl-group 承担。 */
+#gnss-lab details.gl-cold-group { flex: 1 1 100%; border: 1px solid var(--card-border, var(--border, #d8dbe0)); border-radius: 10px; padding: 8px 12px 10px; }
+#gnss-lab details.gl-cold-group > summary.gl-legend { cursor: pointer; list-style: none; margin: 0 0 2px; font-size: 12px;
+  font-weight: 600; color: var(--muted-foreground, #5a5f6a); letter-spacing: .02em; }
+#gnss-lab details.gl-cold-group > summary.gl-legend::-webkit-details-marker { display: none; }
+#gnss-lab details.gl-cold-group > summary.gl-legend::before { content: '▸ '; }
+#gnss-lab details.gl-cold-group[open] > summary.gl-legend::before { content: '▾ '; }
+#gnss-lab details.gl-cold-group > .gl-group { border: 0; padding: 0; }
+#gnss-lab .gl-group > .gl-legend { flex: 0 0 100%; margin: 0 0 2px; font-size: 12px; font-weight: 600;
+  color: var(--muted-foreground, #5a5f6a); letter-spacing: .02em; }
+#gnss-lab .gl-group > .gl-field { flex: 1 1 170px; }
+#gnss-lab .gl-lead { margin: 10px 0 0; max-width: 78ch; }
+#gnss-lab .gl-about > summary { font-size: 12px; color: var(--muted-foreground, #5a5f6a); cursor: pointer; }
+#gnss-lab .gl-about[open] > summary { margin-bottom: 4px; }
+@media (max-width: 620px) {
+  #gnss-lab .gl-group > .gl-field { flex: 1 1 100%; }
+  /* 窄屏：滑杆类控件并排成两列（下拉框仍整行，避免长选项被截断）——Poincare 审计指出 420 px 下 11 个控件排 11 行 */
+  #gnss-lab .gl-group > .gl-field:has(input.form-range) { flex: 1 1 calc(50% - 9px); }
+  #gnss-lab .viz-controls > .gl-field:has(input.form-range) { flex: 1 1 calc(50% - 9px); }
+  #gnss-lab .gl-two { grid-template-columns: minmax(0, 1fr); }
+  /* 窄屏：三个指标卡并排（而不是两行），分组的上下留白再收紧 */
+  #gnss-lab .viz-grid.gl-stats { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+  #gnss-lab .viz-grid.gl-stats .card { padding: 8px 10px; }
+  #gnss-lab .viz-stat-value { font-size: 19px; }
+  #gnss-lab .gl-group { gap: 6px 10px; padding: 6px 8px; }
+  #gnss-lab .gl-about { margin-top: 6px; }
+}
+
+/* 打印：只输出当前标签页（未跑过的面板本来就是空画布，强行展开更差）；但别把吸顶导航印进去 */
+@media print {
+  #gnss-lab > nav { position: static; }
+  #gnss-lab canvas { break-inside: avoid; }
+}
+
+/* v22：术语速查（Ohm 指出 12 个术语首次出现未解释；折叠一行，不占版面） */
+#gnss-lab .gl-glossary { margin: 6px 0 8px; }
+#gnss-lab .gl-glossary > summary { font-size: 12px; color: var(--muted-foreground, #5a5f6a); cursor: pointer; }
+#gnss-lab .gl-glossary ul { margin: 6px 0 0; padding-left: 18px; }
+#gnss-lab .gl-glossary li { margin: 2px 0; max-width: 82ch; }
+
+/* v22：页面级标题（Ramanujan 版面复核指出全页 0 个 h1，标题层级从 h2 起） */
+#gnss-lab .gl-h1 { margin: 0 0 4px; font-size: 17px; font-weight: 600; letter-spacing: .01em; }
+/* v22：窄屏导航紧凑化——10 个 tab 由 3 行压到 2 行（420 px 下 117 px → ~75 px），全部 tab 仍然可见 */
+@media (max-width: 620px) {
+  #gnss-lab > nav { padding: 3px 0 4px; }
+  #gnss-lab nav > .nav.nav-pills { gap: 3px; }
+  #gnss-lab nav > .nav.nav-pills .nav-link { padding: 6px 8px; font-size: 12px; }
+}
+/* 360 px 级窄屏：横向内边距再收 2 px，让 10 个 tab 由 3 行回到 2 行 */
+@media (max-width: 400px) { #gnss-lab nav > .nav.nav-pills .nav-link { padding: 6px 6px; } }
+
+/* v22：首屏总览（3 行内，回答"这页是什么 / 怎么看"） */
+#gnss-lab .gl-intro { margin: 0 0 10px; max-width: 96ch; line-height: 1.55; }
+
+/* v22：面板标题 + 吸顶导航 + 控件可辨识性（Poincare 审计：无 h1/h2、导航不吸顶、控件描边 1.39:1） */
+#gnss-lab .gl-h2 { margin: 2px 0 6px; font-size: 15px; font-weight: 600; letter-spacing: .01em; }
+/* 吸顶必须挂在 <nav> 外壳上：sticky 的包含块是它的**父元素**，如果挂在里面的 .nav 上，
+   包含块就是只有一行高的 <nav>，一滚就被带走（Gauss 实测 scrollY=300 时 top=-122 px） */
+#gnss-lab > nav { position: sticky; top: 0; z-index: 6; background: var(--background, #ffffff);
+  padding: 4px 0 6px; margin: 0 0 2px; }
+#gnss-lab nav > .nav.nav-pills { padding: 0; margin: 0; background: transparent; }
+#gnss-lab .form-select, #gnss-lab .btn { border-color: var(--muted-foreground, #5a5f6a); }
+/* v22：UA 样式给 input[type=range] 默认 margin:2px，而控件是 width:100% ⇒ 每侧多 2 px、整体溢出 4 px。
+   Harvey 的 80 组多宽度审计实测到这个 4 px（无可见截断，但会撑出 #gnss-lab 的 scrollWidth）。 */
+#gnss-lab .form-range { margin: 0; }
+/* v22：触屏触控目标。ds4.1 代理 Linnaeus 在 360/390 触摸模拟下实测：tab 30px、滑杆 28px、
+   select 30px、btn 35px、summary 18px —— 都低于 44px 触控基线，这里统一抬到 44px。
+   只在粗指针（触屏）命中，桌面与宿主面板是 fine 指针、布局完全不变。 */
+@media (pointer: coarse) {
+  #gnss-lab .form-range { height: 44px; }
+  #gnss-lab .form-select { min-height: 44px; padding: 10px 12px; }
+  #gnss-lab .btn { min-height: 44px; padding: 12px 16px; }
+  #gnss-lab nav > .nav.nav-pills .nav-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  #gnss-lab summary { padding-top: 13px; padding-bottom: 13px; }
+  #gnss-lab input[type=checkbox] { width: 18px; height: 18px; }
+}
+/* 吸顶导航（桌面 43px / 触屏 ~96px）会盖住 scrollIntoView({block:'start'}) 定位到的控件：
+   给页内目标留出避让距离（Linnaeus 实测 #gl-lat 被定位到 0–28px，中心命中 #gl-tab-ca） */
+#gnss-lab [id] { scroll-margin-top: 88px; }
+@media (pointer: coarse) { #gnss-lab [id] { scroll-margin-top: 104px; } }
+/* Kimi：分组描边由上面 .gl-group 的 var(--card-border) 决定；此处不再用 muted-foreground 加深（原值
+   与卡片/导航新描边色调不一致，统一归一到 card-border；standalone 与宿主都能落到合理值） */
+@media (max-width: 620px) {
+  #gnss-lab .viz-controls { gap: 8px 12px; }
+  #gnss-lab .gl-group { padding: 6px 8px 8px; }
+  #gnss-lab .form-label { margin-bottom: 2px; }
+}
+
+/* ===== Kimi 视觉美化（2026-10-07）：只改样式，不动任何 id/class 名与结构 ===== */
+
+/* 1) 层级：面板标题 h2 加 3px 主题色刻度条（text 直接子节点不受影响，::before 纯装饰） */
+#gnss-lab .gl-h2 { display: flex; align-items: center; gap: 8px; }
+#gnss-lab .gl-h2::before { content: ''; flex: 0 0 auto; width: 3px; height: 15px; border-radius: 2px;
+  background: var(--primary, #2f6fed); }
+#gnss-lab h2.gl-h2::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--border, #d8dbe0);
+  margin-left: 4px; }
+
+/* 2) 导航吸顶条：极轻发丝线分隔滚动内容（box-shadow 不占布局，对齐 --card 圆角语言） */
+#gnss-lab > nav { box-shadow: 0 1px 0 0 var(--border, #d8dbe0); }
+
+/* 3) 分组：打开状态的折叠组，标题与内容之间加一条发丝分隔（margin 与原文档第 23 行
+   的 margin: 0 0 2px 抵消，净高差 0） */
+#gnss-lab details.gl-cold-group[open] > summary.gl-legend { margin-bottom: 2px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border, #d8dbe0); }
+
+/* 5) 键盘焦点可见（outline 不占布局；触屏粗指针不受影响） */
+#gnss-lab .nav-link:focus-visible, #gnss-lab .btn:focus-visible, #gnss-lab .form-select:focus-visible,
+#gnss-lab .form-range:focus-visible, #gnss-lab summary:focus-visible {
+  outline: 2px solid var(--primary, #2f6fed); outline-offset: 2px; }

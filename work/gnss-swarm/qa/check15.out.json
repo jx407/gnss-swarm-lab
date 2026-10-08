@@ -1,0 +1,81 @@
+{
+ "logs": [],
+ "checks": [
+  {
+   "name": "面板已注册",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "trackDll 模块已加载",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "画布可见且有宽度",
+   "pass": true,
+   "info": "940"
+  },
+  {
+   "name": "动态场景跑完并锁定",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "快照平均在动态下显著劣化（后 10 历元均值 > 200 m）",
+   "pass": true,
+   "info": "604"
+  },
+  {
+   "name": "跟踪环在动态下仍精确（后 10 历元均值 < 80 m）",
+   "pass": true,
+   "info": "19"
+  },
+  {
+   "name": "环路比快照平均好 ≥ 3 倍",
+   "pass": true,
+   "info": "31.9"
+  },
+  {
+   "name": "漂移=0 时快照平均也回到量化下限附近（< 80 m）",
+   "pass": true,
+   "info": "15"
+  },
+  {
+   "name": "漂移=0 时环路同样在量化下限附近（< 80 m）",
+   "pass": true,
+   "info": "27"
+  },
+  {
+   "name": "漂移=0 时环路 locked",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "说明文字给出两种策略的实测数字",
+   "pass": true,
+   "info": "每历元漂移 0.00 chip（0 m/历元）· 后 10 历元平均误差：快照平均 15 m，二阶跟踪环 27 m（环路"
+  },
+  {
+   "name": "暗色主题下同样能跑完",
+   "pass": true,
+   "info": ""
+  }
+ ],
+ "states": {
+  "dyn": {
+   "avgMean": 604.3279899584066,
+   "loopMean": 18.967859970435736,
+   "avgLast": 782.9555400464695,
+   "loopLast": 1.4242850257947168,
+   "locked": true,
+   "slope": 0.27
+  },
+  "stat": {
+   "avgMean": 14.534216343119756,
+   "loopMean": 26.607261632480913,
+   "locked": true
+  }
+ }
+}
+---- check15: 12/12 通过，控制台问题 0 条 ----

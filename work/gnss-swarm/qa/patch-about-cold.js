@@ -1,0 +1,11 @@
+'use strict';
+const fs = require('fs');
+const p = 'D:/codex/2026-10-05/new-chat/work/gnss-swarm/shell.html';
+let s = fs.readFileSync(p, 'utf8');
+const a = '<li><strong>误差量级</strong>：';
+const n = s.split(a).length - 1;
+if (n !== 1) throw new Error('anchor count ' + n);
+const insert = '<li><strong>冷启动全链</strong>：逐颗生成 4 ms 中频信号（多普勒取自卫星径向速度、码相位取自几何距离+接收机钟差）→ 41 个多普勒格的二维捕获 → 抛物插值把码相位精修到亚采样 → 用粗略位置/钟差先验解开整毫秒模糊度 → 最小二乘得到首次定位。单历元快照的伪距精度约 0.3–0.5 码片（≈100 m），所以首次定位在百米量级；真实接收机靠跟踪环（DLL/PLL）与多历元平滑把码相位精度提升 1–2 个数量级。</li>\n      ';
+s = s.split(a).join(insert + a);
+fs.writeFileSync(p, s);
+console.log('about updated with cold-start chain, bytes=' + Buffer.byteLength(s));

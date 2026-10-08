@@ -1,0 +1,10 @@
+'use strict';
+const fs = require('fs');
+const p = 'D:/codex/2026-10-05/new-chat/work/gnss-swarm/app/51-mp-draw.js';
+let s = fs.readFileSync(p, 'utf8');
+const find = "    setText('gl-mp-detail', 'PRN ' + d.sat.prn";
+const n = s.split(find).length - 1;
+if (n !== 1) throw new Error('expected 1, got ' + n);
+s = s.split(find).join("    setText('gl-mp-detail', '站点 ' + C.fmt(APP.state.lat, 1) + '°/' + C.fmt(APP.state.lon, 1) + '° · PRN ' + d.sat.prn");
+fs.writeFileSync(p, s);
+console.log('mp detail prefixed');

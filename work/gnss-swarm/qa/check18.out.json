@@ -1,0 +1,103 @@
+{
+ "logs": [],
+ "checks": [
+  {
+   "name": "pllTrack 模块已加载",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "两块画布有宽度",
+   "pass": true,
+   "info": "{\"a\":460,\"b\":460}"
+  },
+  {
+   "name": "首次进入自动运行出结果",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "默认用 Costas 鉴相",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "默认（Costas + 翻转）锁定",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "默认翻转后仍贴住相位（后 20 历元平均 |误差| ≤ 0.15 rad）",
+   "pass": true,
+   "info": "0.043 rad"
+  },
+  {
+   "name": "atan2 + 翻转：被踢走（后段平均 |误差| ≥ 1.0 rad）",
+   "pass": true,
+   "info": "2.883 rad"
+  },
+  {
+   "name": "atan2 + 翻转：稳态判为未锁定",
+   "pass": true,
+   "info": ""
+  },
+  {
+   "name": "一阶环稳态滞后 ≥ 0.25 rad（教科书 2πf·dt/α≈0.42）",
+   "pass": true,
+   "info": "0.478 rad"
+  },
+  {
+   "name": "二阶环稳态滞后 ≤ 0.10 rad",
+   "pass": true,
+   "info": "0.046 rad"
+  },
+  {
+   "name": "二阶环频差估计 ≈ 2 Hz（±0.6）",
+   "pass": true,
+   "info": "2.08 Hz"
+  },
+  {
+   "name": "统计卡有数值（非破折号）",
+   "pass": true,
+   "info": "0.054 rad | 2.08 Hz | 已锁定"
+  },
+  {
+   "name": "明细文案含鉴相器与环路阶数",
+   "pass": true,
+   "info": "无数据位翻转；鉴相器 Costas I·Q/(I²+Q²)，二阶 PI（α=0.4, β=0.02），残余多普勒 2.0 Hz、信噪比 -20 dB：稳态相位误"
+  },
+  {
+   "name": "暗色主题下同样自动运行并锁定",
+   "pass": true,
+   "info": "{\"locked\":true}"
+  }
+ ],
+ "states": {
+  "def": {
+   "locked": true,
+   "lastErr": -0.00935352451899929,
+   "meanAbsErr": 0.04347768735954912,
+   "discMode": "costas",
+   "flipAt": 20
+  },
+  "atan": {
+   "locked": false,
+   "meanAbsAfter": 2.8834825891423894
+  },
+  "one": {
+   "lag": 0.4781451571545506,
+   "freq": 1.922780281299627
+  },
+  "two": {
+   "lag": 0.045565381160780724,
+   "freq": 2.0752075232555085
+  },
+  "stats": [
+   "0.054 rad",
+   "2.08 Hz",
+   "已锁定",
+   "无数据位翻转；鉴相器 Costas I·Q/(I²+Q²)，二阶 PI（α=0.4, β=0.02），残余多普勒 2.0 Hz、信噪比 -20 dB：稳态相位误差 rms 0.054 rad（3.1°），频差估计 2.08 Hz，环路锁定。"
+  ]
+ }
+}
+---- check18: 14/14 通过，控制台问题 0 条 ----

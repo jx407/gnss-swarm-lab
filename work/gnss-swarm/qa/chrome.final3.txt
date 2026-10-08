@@ -1,0 +1,5 @@
+W=360 {"h1":"GNSS 蜂群工作台","h1px":"17px","navH":73,"navRows":2,"btnH":30,"navFontPx":"12px","glossary":true,"glossaryClosedH":36,"glossaryOpen":false,"labH":1777,"docH":1817,"overflowX":false,"canvases":26,"canvZero":23} consoleIssues=0
+W=420 {"h1":"GNSS 蜂群工作台","h1px":"17px","navH":73,"navRows":2,"btnH":30,"navFontPx":"12px","glossary":true,"glossaryClosedH":36,"glossaryOpen":false,"labH":1648,"docH":1688,"overflowX":false,"canvases":26,"canvZero":23} consoleIssues=0
+W=768 {"h1":"GNSS 蜂群工作台","h1px":"17px","navH":80,"navRows":2,"btnH":33,"navFontPx":"14px","glossary":true,"glossaryClosedH":18,"glossaryOpen":false,"labH":1170,"docH":1210,"overflowX":false,"canvases":26,"canvZero":23} consoleIssues=0
+W=980 {"h1":"GNSS 蜂群工作台","h1px":"17px","navH":43,"navRows":1,"btnH":33,"navFontPx":"14px","glossary":true,"glossaryClosedH":18,"glossaryOpen":false,"labH":1133,"docH":1173,"overflowX":false,"canvases":26,"canvZero":23} consoleIssues=0
+W=1280 {"h1":"GNSS 蜂群工作台","h1px":"17px","navH":43,"navRows":1,"btnH":33,"navFontPx":"14px","glossary":true,"glossaryClosedH":18,"glossaryOpen":false,"labH":1087,"docH":1127,"overflowX":false,"canvases":26,"canvZero":23} consoleIssues=0
