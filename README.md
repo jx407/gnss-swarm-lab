@@ -62,6 +62,11 @@ node qa/probe-coldsatclip.js           # 冷启动图文字越界
 node qa/probe-gecko.js / probe-webkit.js   # 可选：Gecko / WebKit 跨引擎（需 playwright install firefox webkit）
 ```
 探头默认指向 `outputs/gnss-swarm-lab.html`；换产物时改脚本顶部的 `PAGE` 常量即可。
+`node qa/probe-pages.js` 可以直接验证"部署到 GitHub Pages 后线上还能不能跑"（默认打本仓库的 Pages 地址）。
+
+> ⚠️ **探头里的路径说明**：`qa/` 与 `review/` 里的探头是开发过程中写的，**含作者本机的绝对路径**
+> （`PAGE = file:///D:/…` 与 `createRequire('C:/Users/…/node_modules/')`）——不含任何密钥，但换机器跑要改成你自己的路径；
+> 页面本身与 `tests/` 不依赖任何绝对路径。
 
 ## 目录
 

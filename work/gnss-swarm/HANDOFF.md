@@ -16,6 +16,19 @@
 > 代价：**聊天面板不再渲染本页**（它只能从那个固定路径加载）。若需要恢复面板显示，把那两个产物之一复制回该路径即可
 > （会重新产生一个项目外文件，需用户确认）。
 
+## 🌐 第九轮：开源到 GitHub（2026-10-08）
+
+- 仓库：**https://github.com/jx407/gnss-swarm-lab**（public，MIT，topics: gnss / gnss-teaching / canvas / offline-first / education / javascript）
+- 在线试用（GitHub Pages，source = `main` / `docs`）：**https://jx407.github.io/gnss-swarm-lab/**
+  - 线上实测：`loadMs=1683`、10 tab / 10 panel / 26 canvas、`#gl-sky-pdop=2.81`、天空图非空像素 8678、**0 控制台问题**（`qa/probe-pages.js`）
+- 首次提交 `f5d42bc`（315 文件 / 3.87 MB）：源码 `work/gnss-swarm/`（app+winners+tests+qa）、交付物 `outputs/`、
+  Pages 入口 `docs/index.html`（由 `build-all.sh` 生成）、README/LICENSE/.gitignore、审计报告 `review/ds41/*.md`
+- **未入库**（`.gitignore`）：所有截图与抓取页（156 MB）、各审计代理的中间目录（含误留的浏览器 profile 缓存）、
+  `work/gnss-swarm/review/` 与一次性 `apply-*.js`、`candidates/`、`build/`
+- 公开前的安全扫描：`git ls-files` 全量 grep 无 `gho_/github_pat_/sk-/AKIA/PRIVATE KEY/password` 命中、无 `.env`/凭据文件；
+  只有 163 个探头文件含本机绝对路径（已在 README 说明，无密钥）
+- 更新仓库的流程：`bash work/gnss-swarm/build-all.sh` → `git add -A && git commit && git push`（Pages 会自动重新构建）
+
 ## 🎨 v22 第八轮：Kimi 三路并行视觉打磨（2026-10-07）
 
 **用户授权改用 Kimi 子代理做美化**；三个 Kimi 代理在**互不重叠的写权限**下并行（全部已 `close_agent`）：
